@@ -1,0 +1,2 @@
+# Ignore files used for local testing
+env_vars.yaml

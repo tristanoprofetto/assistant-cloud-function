@@ -1,0 +1,43 @@
+name: Deploy Google Cloud Function
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0.3.0
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Deploy to Google Cloud Function
+      run: |
+        gcloud functions deploy ${{ vars.GCP_FUNCTION_NAME }} \
+          --region ${{ vars.GCP_REGION }} \
+          --entry-point ${{ vars.ENTRYPOINT }} \
+          --vpc-connector ${{ secrets.VPC_CONNECTOR }}
+          --runtime python39 \
+          --trigger-http \
+          --allow-unauthenticated \
+          --source . \
+          --set-env-vars OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},REDIS_ENDPOINT=${{ secrets.REDIS_ENDPOINT }},SYSTEM_PROMPT=${{ secrets.SYSTEM_PROMPT }},ASSISTANT_PROMPT=${{ secrets.ASSISTANT_PROMPT }}
